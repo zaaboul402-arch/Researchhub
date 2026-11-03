@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ResearchHub</title>
+<style>
+:root{
+  --bg:#f6f5f2; --surface:#ffffff; --surface-2:#faf9f6; --border:#e3e0d8;
+  --text:#1c1b18; --text-dim:#6b6558; --accent:#1e3a5f; --accent-2:#b8923f;
+  --danger:#a33; --radius:10px;
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15161a; --surface:#1e1f24; --surface-2:#232429; --border:#33343a;
+    --text:#ecebe8; --text-dim:#9a978e; --accent:#7ea6d8; --accent-2:#d4ac5a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15161a; --surface:#1e1f24; --surface-2:#232429; --border:#33343a;
+  --text:#ecebe8; --text-dim:#9a978e; --accent:#7ea6d8; --accent-2:#d4ac5a;
+  color-scheme: dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+*{box-sizing:border-box;}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:Georgia,'Iowan Old Style',serif;
+  -webkit-font-smoothing:antialiased;
+}
+header{
+  padding:28px 20px 20px; max-width:860px; margin:0 auto;
+}
+.brand{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;}
+.brand h1{margin:0; font-size:28px; letter-spacing:.3px; color:var(--accent);}
+.brand span{color:var(--accent-2); font-style:italic; font-size:14px;}
+header p{color:var(--text-dim); margin:6px 0 0; font-size:14.5px;}
+.controls{
+  max-width:860px; margin:0 auto; padding:0 20px 16px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+}
+input[type="text"], textarea, input[type="search"]{
+  font-family:inherit; background:var(--surface); color:var(--text);
+  border:1px solid var(--border); border-radius:8px; padding:9px 12px; font-size:14px;
+}
+input[type="search"]{flex:1; min-width:180px;}
+button{
+  font-family:inherit; cursor:pointer; border:none; border-radius:8px;
+  padding:9px 16px; font-size:14px; font-weight:600;
+}
+.btn-primary{background:var(--accent); color:#fff;}
+.btn-ghost{background:transparent; color:var(--accent); border:1px solid var(--accent);}
+.btn-small{padding:6px 11px; font-size:12.5px; border-radius:6px;}
+main{max-width:860px; margin:0 auto; padding:0 20px 60px;}
+#grid{display:grid; gap:14px;}
+.card{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  padding:16px 18px;
+}
+.card h3{margin:0 0 4px; font-size:17px; color:var(--text);}
+.meta{color:var(--text-dim); font-size:12.5px; margin-bottom:8px;}
+.tag{
+  display:inline-block; background:var(--surface-2); border:1px solid var(--border);
+  color:var(--accent-2); font-size:11px; padding:1px 8px; border-radius:20px; margin-right:6px;
+}
+.abstract{font-size:14px; line-height:1.5; color:var(--text); margin:8px 0 12px;}
+.row{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+.row a{text-decoration:none;}
+.empty, .loading{color:var(--text-dim); text-align:center; padding:50px 10px; font-size:14px;}
+dialog{
+  border:none; border-radius:var(--radius); padding:0; background:var(--surface); color:var(--text);
+  width:min(480px,92vw); max-height:88vh; overflow:auto;
+}
+dialog::backdrop{background:rgba(0,0,0,.4);}
+.sheet{padding:20px;}
+.sheet h2{margin:0 0 14px; font-size:18px; color:var(--accent);}
+.field{display:flex; flex-direction:column; gap:4px; margin-bottom:12px;}
+.field label{font-size:12.5px; color:var(--text-dim);}
+.field input[type="file"]{font-size:13px;}
+.sheet-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:6px;}
+.status{font-size:12.5px; color:var(--text-dim); min-height:16px;}
+footer{text-align:center; color:var(--text-dim); font-size:11.5px; padding:0 20px 30px;}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><h1>ResearchHub</h1><span>open research, shared</span></div>
+  <p>Browse and download papers. Public and free to read.</p>
+</header>
+<div class="controls">
+  <input type="search" id="search" placeholder="Search by title, author, or topic…">
+  <button class="btn-primary" id="uploadBtn" style="display:none">Upload Research</button>
+</div>
+<main>
+  <div id="grid"><div class="loading">Loading papers…</div></div>
+</main>
+<footer>ResearchHub</footer>
+
+<dialog id="uploadDialog">
+  <form class="sheet" id="uploadForm">
+    <h2>Upload Research</h2>
+    <div class="field"><label>Title</label><input type="text" id="f_title" required></div>
+    <div class="field"><label>Author(s)</label><input type="text" id="f_author" required></div>
+    <div class="field"><label>Category / Tag (optional)</label><input type="text" id="f_tag"></div>
+    <div class="field"><label>Abstract</label><textarea id="f_abstract" rows="4" required></textarea></div>
+    <div class="field"><label>PDF file</label><input type="file" id="f_file" accept="application/pdf" required></div>
+    <div class="status" id="uploadStatus"></div>
+    <div class="sheet-actions">
+      <button type="button" class="btn-ghost btn-small" id="cancelBtn">Cancel</button>
+      <button type="submit" class="btn-primary btn-small" id="submitBtn">Publish</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+let db=null, assets=null, canEdit=false;
+let papers=[];
+
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+function fmtDate(iso){ try{ return new Date(iso).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}); }catch(e){ return ''; } }
+function fmtSize(b){ if(!b) return ''; const kb=b/1024; return kb<1024? kb.toFixed(0)+' KB' : (kb/1024).toFixed(1)+' MB'; }
+
+function render(){
+  const grid = document.getElementById('grid');
+  const q = (document.getElementById('search').value||'').toLowerCase().trim();
+  let list = papers;
+  if(q){
+    list = papers.filter(p =>
+      (p.title||'').toLowerCase().includes(q) ||
+      (p.author||'').toLowerCase().includes(q) ||
+      (p.tag||'').toLowerCase().includes(q) ||
+      (p.abstract||'').toLowerCase().includes(q)
+    );
+  }
+  if(list.length===0){
+    grid.innerHTML = `<div class="empty">${papers.length===0 ? 'No research uploaded yet.' : 'No papers match your search.'}</div>`;
+    return;
+  }
+  grid.innerHTML = list.map(p => `
+    <div class="card">
+      <h3>${esc(p.title)}</h3>
+      <div class="meta">${esc(p.author)} · ${fmtDate(p.uploadedAt)}${p.size? ' · '+fmtSize(p.size):''}</div>
+      ${p.tag ? `<span class="tag">${esc(p.tag)}</span>` : ''}
+      <div class="abstract">${esc(p.abstract)}</div>
+      <div class="row">
+        <a href="${p.url}" target="_blank" rel="noopener"><button class="btn-ghost btn-small">View PDF</button></a>
+        <a href="${p.url}" download="${esc(p.filename||p.title+'.pdf')}"><button class="btn-primary btn-small">Download</button></a>
+        ${canEdit ? `<button class="btn-ghost btn-small" data-del="${p.id}" data-asset="${p.assetId||''}" style="margin-left:auto;color:var(--danger);border-color:var(--danger)">Remove</button>` : ''}
+      </div>
+    </div>
+  `).join('');
+
+  if(canEdit){
+    grid.querySelectorAll('[data-del]').forEach(btn=>{
+      btn.onclick = async () => {
+        if(!confirm('Remove this paper?')) return;
+        const id = btn.getAttribute('data-del');
+        const assetId = btn.getAttribute('data-asset');
+        try{
+          await db.collection('papers').doc(id).delete();
+          if(assetId && assets) await assets.delete(assetId);
+        }catch(e){ alert('Could not remove it: '+(e.message||e.code||e)); }
+      };
+    });
+  }
+}
+
+async function init(){
+  try{
+    const user = await claude.use('user');
+    canEdit = user ? await user.canEdit() : false;
+  }catch(e){ canEdit = false; }
+  document.getElementById('uploadBtn').style.display = canEdit ? 'inline-block' : 'none';
+
+  db = await claude.use('db');
+  if(!db){
+    document.getElementById('grid').innerHTML = '<div class="empty">Sign in to view the research library.</div>';
+    return;
+  }
+  if(canEdit) assets = await claude.use('assets');
+
+  let loaded = false;
+  setTimeout(()=>{ if(!loaded) document.getElementById('grid').innerHTML = '<div class="loading">Still loading… this may take a moment.</div>'; }, 10000);
+
+  db.collection('papers').orderBy('uploadedAt','desc').onSnapshot(snap=>{
+    loaded = true;
+    papers = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    render();
+  }, err=>{
+    loaded = true;
+    document.getElementById('grid').innerHTML = '<div class="empty">Could not load the library right now.</div>';
+  });
+}
+
+document.getElementById('search').addEventListener('input', render);
+
+document.getElementById('uploadBtn').addEventListener('click', ()=>{
+  document.getElementById('uploadForm').reset();
+  document.getElementById('uploadStatus').textContent='';
+  document.getElementById('uploadDialog').showModal();
+});
+document.getElementById('cancelBtn').addEventListener('click', ()=>{
+  document.getElementById('uploadDialog').close();
+});
+
+document.getElementById('uploadForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  if(!assets || !db) return;
+  const submitBtn = document.getElementById('submitBtn');
+  const status = document.getElementById('uploadStatus');
+  const file = document.getElementById('f_file').files[0];
+  if(!file){ status.textContent='Choose a PDF file.'; return; }
+  submitBtn.disabled = true;
+  status.textContent = 'Uploading PDF…';
+  try{
+    const up = await assets.upload(file, {type:'application/pdf'});
+    status.textContent = 'Saving entry…';
+    await db.collection('papers').add({
+      title: document.getElementById('f_title').value.trim(),
+      author: document.getElementById('f_author').value.trim(),
+      tag: document.getElementById('f_tag').value.trim(),
+      abstract: document.getElementById('f_abstract').value.trim(),
+      assetId: up.id,
+      url: up.url,
+      filename: file.name,
+      size: up.sizeBytes,
+      uploadedAt: new Date().toISOString()
+    });
+    status.textContent = 'Published.';
+    setTimeout(()=>{ document.getElementById('uploadDialog').close(); }, 400);
+  }catch(err){
+    status.textContent = 'Upload failed: ' + (err.message || err.code || 'try again.');
+  }finally{
+    submitBtn.disabled = false;
+  }
+});
+
+init();
+</script>
+</body>
+</html>
